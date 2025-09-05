@@ -1,4 +1,3 @@
-import re
 import numpy as np
 import random
 
@@ -51,4 +50,15 @@ class PFA:
             current = chosen
         return current in self.accept_states, prob
     
+    def get_transition_matrices(self):
+        Q = len(self.states)
+        matrices = {symbol: np.zeros((Q, Q)) for symbol in self.alphabet}
+        
+        for (src, sym), outcomes in self.transitions.items():
+            i = self.state_index[src]
+            for dst, prob in outcomes.items():
+                j = self.state_index[dst]
+                matrices[sym][i,j] = prob
+        return matrices
     
+            
