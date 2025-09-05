@@ -1,9 +1,9 @@
 import numpy as np
 import random
-
+import warnings
 
 class PFA:
-    def __init__(self, states, alphabet, transitions, start_state, accept_states):
+    def __init__(self, states, alphabet, transitions, start_state, accept_states, allow_substochastic=True):
         """
         states: set of states
         alphabet: list of symbols
@@ -11,6 +11,7 @@ class PFA:
         start_state: start state
         accept_states: set of accept states
         state_index: mapping from state to index
+        allow_substochastic: if True, allows transitions that sum to less than 1
         """
         self.states = list(states)
         self.alphabet = list(alphabet)
@@ -18,6 +19,8 @@ class PFA:
         self.start_state = start_state
         self.accept_states = set(accept_states)
         self.state_index = {state: i for i, state in enumerate(self.states)}
+        self.allow_substochastic = allow_substochastic
+        self._validate()
         
         
     def _validate(self):
@@ -30,9 +33,11 @@ class PFA:
             #The following is in case the PFA is a substochastic one.
             if total > 1.0 + 1e-8:
                 raise ValueError(f"Probabilities from ({state}, '{symbol}') exceed 1. Got {total}.")
-            # Allow substochastic (<= 1), just warn if < 1
             if total < 1.0 - 1e-8:
-                print(f"Warning: Substochastic transition at ({state}, '{symbol}'), total = {total}")
+                if self.allow_substochastic:
+                    warnings.warn(f"Warning: Substochastic transition at ({state}, '{symbol}'), total = {total}")
+                else:
+                    raise ValueError(f"Probabilities from ({state}, '{symbol}') are substochastic but not allowed.")
     
     
     def run_once(self, word):
