@@ -1,6 +1,5 @@
 import json
 
-from sphinx import ret
 from core.pfa import PFA
 
 def load_pfa_from_json(file_path: str, allow_substochastic=True) -> PFA:
