@@ -1,4 +1,5 @@
-
+import re
+import numpy as np
 import random
 
 
@@ -7,50 +8,47 @@ class PFA:
         """
         states: set of states
         alphabet: list of symbols
-        transitions: dict of dicts { (state, symbol): {next_state: prob,
+        transitions: dict of dicts
+        start_state: start state
+        accept_states: set of accept states
+        state_index: mapping from state to index
         """
-        self.states = states
-        self.alphabet = alphabet
+        self.states = list(states)
+        self.alphabet = list(alphabet)
         self.transitions = transitions
         self.start_state = start_state
-        self.accept_states = accept_states
+        self.accept_states = set(accept_states)
+        self.state_index = {state: i for i, state in enumerate(self.states)}
         
         
-    def run_once(self, input):
-        """
-        docstring
-        """
-        current_state = self.start_state
-        total_prob = 1.0
-        
-        for symb in input:
-            if (current_state, symb) not in self.transitions:
-                return False, 0.0
-            
-            next_states = self.transitions[(current_state, symb)]
-            states = list(next_states.keys())
-            probs = list(next_states.values())
-            
-            current_state = random.choices(states, weights=probs)[0]
-            total_prob *= probs[states.index(current_state)]
-
-        accepted = current_state in self.accept_states
-        return accepted, total_prob
-        
-    def simulate(self, input, n = 10000):
-        """
-        docstring
-        """
-        accept_count = 0
-        total_prob = 0.0
-        
-        for _ in range(n):
-            accepted, prob = self.run_once(input)
-            total_prob += prob
-            if accepted:
-                accept_count += 1
-                
-        acceptance_rate = accept_count / n
-        avg_prob = total_prob / n 
-        
-        return acceptance_rate, avg_prob
+    def _validate(self):
+        for (state, symbol), outcomes in self.transitions.items():
+            if symbol not in self.alphabet:
+                raise ValueError(f"Symbol {symbol} not in alphabet")
+            if state not in self.states:
+                raise ValueError(f"State {state} not in states")
+            total = sum(outcomes.values())
+            #The following is in case the PFA is a substochastic one.
+            if total > 1.0 + 1e-8:
+                raise ValueError(f"Probabilities from ({state}, '{symbol}') exceed 1. Got {total}.")
+            # Allow substochastic (<= 1), just warn if < 1
+            if total < 1.0 - 1e-8:
+                print(f"Warning: Substochastic transition at ({state}, '{symbol}'), total = {total}")
+    
+    
+    def run_once(self, word):
+        current = self.start_state
+        prob = 1.0
+        for symbol in word:
+            key = (current, symbol)
+            if key not in self.transitions:
+                return False, 0.0 # No transition defined
+            outcomes = self.transitions[key]
+            next_states = list(outcomes.keys())
+            weights = list(outcomes.values())
+            chosen = random.choices(next_states, weights=weights, k=1)[0]
+            prob *= outcomes[chosen]
+            current = chosen
+        return current in self.accept_states, prob
+    
+    
