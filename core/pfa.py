@@ -61,4 +61,13 @@ class PFA:
                 matrices[sym][i,j] = prob
         return matrices
     
-            
+    def get_intial_vector(self):
+        v = np.zeros((1, len(self.states)))
+        v[0, self.state_index[self.start_state]] = 1.0
+        return v
+    
+    def get_final_vector(self):
+        v = np.zeros(1, (len(self.states)))
+        for state in self.accept_states:
+            v[self.state_index[state], 0] = 1.0
+        return v       
