@@ -67,7 +67,7 @@ class PFA:
         return v
     
     def get_final_vector(self):
-        v = np.zeros(1, (len(self.states)))
+        v = np.zeros((len(self.states), 1))
         for state in self.accept_states:
             v[self.state_index[state], 0] = 1.0
         return v       
