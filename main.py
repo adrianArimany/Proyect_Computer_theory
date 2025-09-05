@@ -1,4 +1,4 @@
-import pfa
+import core.pfa as pfa
 
 
 if __name__ == "__main__":
