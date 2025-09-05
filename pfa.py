@@ -5,7 +5,9 @@ import random
 class PFA:
     def __init__(self, states, alphabet, transitions, start_state, accept_states):
         """
-        docstring
+        states: set of states
+        alphabet: list of symbols
+        transitions: dict of dicts { (state, symbol): {next_state: prob,
         """
         self.states = states
         self.alphabet = alphabet
