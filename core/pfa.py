@@ -51,6 +51,11 @@ class PFA:
         return current in self.accept_states, prob
     
     def get_transition_matrices(self):
+        """_summary_
+        Creates a matrix for each symbol in the alphabet, where the entry (i, j)
+        Returns:
+            matrix: dim(Q x Q)
+        """
         Q = len(self.states)
         matrices = {symbol: np.zeros((Q, Q)) for symbol in self.alphabet}
         
