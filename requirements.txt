@@ -7,6 +7,7 @@ pandas>=1.5
 typing-extensions>=4.5
 
 # If you plan to expand with visualizations
+networkx>=3.1
 matplotlib>=3.7
 
 # Optional: fast JSON validation (if added)

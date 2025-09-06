@@ -10,9 +10,13 @@ def benchmark_pfa(pfa, words, n_trial=1000):
         words (_type_): _description_
         n_trial (int, optional): _description_. Defaults to 1000.
     """
+        
     mc_result = simulate_monte_carlo(pfa, words[0], n_trial=n_trial)
     mm_result = simulate_matrix_method(pfa, words[0])
     
+    if "acceptance_probability" not in mc_result:
+        raise ValueError("Monte Carlo simulation failed or returned invalid structure.")
+
     
     df = pd.DataFrame([
     {
@@ -21,7 +25,7 @@ def benchmark_pfa(pfa, words, n_trial=1000):
     "Average Path Prob": mc_result["average_path_probability"],
     "Stddev Path Prob": mc_result["stddev_path_probability"],
     "Elapsed Time (s)": mc_result["elapsed_time"],
-    "Trials": mc_result["n_trials"]
+    "Trials": mc_result["n_trial"]
     },
     {
     "Method": "Matrix Product",

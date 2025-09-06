@@ -1,5 +1,4 @@
 import json
-
 from core.pfa import PFA
 
 def load_pfa_from_json(file_path: str, allow_substochastic=True) -> PFA:
@@ -24,8 +23,12 @@ def load_pfa_from_json(file_path: str, allow_substochastic=True) -> PFA:
     allow_substochastic: if True, allows transitions that sum to less than 1    
     '''
     
-    with open(file_path, 'r') as f:
-        data = json.load(f)
+    if hasattr(file_path, 'read'):
+        # file_like is Streamlit's UploadedFile
+        data = json.load(file_path)
+    else:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
     
     parsed_transitions = {}
     for key, outcomes in data['transitions'].items():
@@ -41,20 +44,3 @@ def load_pfa_from_json(file_path: str, allow_substochastic=True) -> PFA:
         allow_substochastic=allow_substochastic
     )
     
-def save_pfa_to_json(pfa: PFA, file_path: str):
-    """_summary_
-    Not finished yet, might be included later.
-    Args:
-        pfa (PFA): _description_
-        file_path (str): _description_
-    """
-    data = {
-        "states": pfa.states,
-        "alphabet": pfa.alphabet,
-        "transitions": pfa.transitions,
-        "start_state": pfa.start_state,
-        "accept_states": pfa.accept_states
-    }
-    with open(file_path, 'w') as f:
-        json.dump(data, f, indent=4)
-        
