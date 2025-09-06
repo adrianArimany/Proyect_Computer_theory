@@ -1,5 +1,5 @@
 from simulation.monte_carlo import simulate_monte_carlo
-from simulation.matrix_method import simulate_matrix
+from simulation.matrix_method import simulate_matrix_method
 
 def estimate_cut_point(pfa, word,n_traials = 10000, method = "monte_carlo", threshold = 0.5):
     """_summary_
@@ -22,7 +22,7 @@ def estimate_cut_point(pfa, word,n_traials = 10000, method = "monte_carlo", thre
         result = simulate_monte_carlo(pfa, word, n_trial=n_traials)
         prob = result["acceptance_probability"]
     elif method == "matrix_method":
-        result = simulate_matrix(pfa, word)
+        result = simulate_matrix_method(pfa, word)
         prob = result["exact_probability"]
     else:
         raise ValueError("Method must be either 'monte_carlo' or 'matrix_method'")

@@ -1,10 +1,10 @@
 import streamlit as st
 from utils.io import load_pfa_from_json
 from simulation.monte_carlo import simulate_monte_carlo
-from simulation.matrix_method import simulate_matrix
-from utils.benchmark import benchmark_pfa_methods
+from simulation.matrix_method import simulate_matrix_method
+from utils.benchmark import benchmark_pfa
 from analysis.cutpoint import estimate_cut_point
-from analysis.loop_analysis import loop_return_probability
+from analysis.loop_analysis import loop_retun_probability
 
 # -- side bar --
 st.sidebar.title("load PFA")
@@ -34,11 +34,11 @@ if json_file:
     if method == "monte_carlo":
         result = simulate_monte_carlo(pfa, word, n_trial=trails)
     else:
-        result = simulate_matrix(pfa, word)
+        result = simulate_matrix_method(pfa, word)
     st.json(result)
     
     st.subheader("Benchmarking Results: Monte Carlo vs Matrix Method")
-    df = benchmark_pfa_methods(pfa, [word], n_trial=trails)
+    df = benchmark_pfa(pfa, [word], n_trial=trails)
     st.dataframe(df)
     
     if show_cutpoint:
@@ -49,7 +49,7 @@ if json_file:
     if show_loop:
         st.subheader("Loop Return Probability")
         try:
-            prob = loop_return_probability(pfa, loop_symbol, loop_state, loop_k)
+            prob = loop_retun_probability(pfa, loop_symbol, loop_state, loop_k)
             st.write(f"Probability of returning to state '{loop_state}' after {loop_k} steps using symbol '{loop_symbol}': {prob:.6f}")
         except AssertionError as e:
             st.error(str(e))
