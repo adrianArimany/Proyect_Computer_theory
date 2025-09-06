@@ -50,13 +50,13 @@ if json_file:
         st.markdown("---")
         method = st.selectbox("Simulation Method", ["monte_carlo", "matrix"])
         word = st.text_input("Input Word from alphabet")
-        trials = st.number_input("Number of Trials for Monte Carlo", value=100000, step=1000)
+        n_trial = st.number_input("Number of Trials for Monte Carlo", value=100000, step=1000)
 
-
+        st.markdown("---")
         show_cutpoint = st.checkbox("Check cut point")
         cut_threshold = st.slider("Cut point threshold", 0.0, 1.0, 0.5)
 
-
+        st.markdown("---")
         show_loop = st.checkbox("Loop Return Probability")
         loop_symbol = st.text_input("Symbol for Loop", value="")
         loop_state = st.text_input("State for Loop", value="")
@@ -67,7 +67,7 @@ if json_file:
         st.subheader("Method Result")
         if method == "monte_carlo":
             st.info("Monte Carlo Result")
-            result = simulate_monte_carlo(pfa, word, trials)
+            result = simulate_monte_carlo(pfa, word, n_trial)
         else:
             st.info("Matrix Result")
             result = simulate_matrix_method(pfa, word)
@@ -75,13 +75,13 @@ if json_file:
 
 
         st.subheader("Benchmark Monte Carlo vs Matrix")
-        df = benchmark_pfa(pfa, word, n_trial=trials)
+        df = benchmark_pfa(pfa, word, n_trial=n_trial)
         st.dataframe(df)
 
 
         if show_cutpoint:
             st.subheader("Cut-point Analysis")
-            cut = estimate_cut_point(pfa, word, method=method, threshold=cut_threshold, n_trial=trials)
+            cut = estimate_cut_point(pfa, word, method=method, threshold=cut_threshold, n_trial=n_trial)
             st.json(cut)
 
 
