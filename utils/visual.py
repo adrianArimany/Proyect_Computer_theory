@@ -16,7 +16,12 @@ def draw_pfa_diagram(pfa):
         
     for (src, symbol), transitions in pfa.transitions.items():
         for dst, prob in transitions.items():
-            label = f"{symbol}|{prob:.2f}"
+            if prob == 0:
+                continue
+            if prob == 1:
+                label = symbol
+            else:
+                label = f"{symbol}|{prob:.2f}"
             G.add_edge(src, dst, label=label)
         
     fig, ax = plt.subplots(figsize=(10, 3))
