@@ -13,7 +13,7 @@ def simulate_monte_carlo(pfa: PFA, word: str, n_trial: int = 1000, seed: int = N
     """
     if seed is not None:
         np.random.seed(seed)    
-    
+        
     
     accept_count = 0
     probabilities = []
@@ -36,7 +36,6 @@ def simulate_monte_carlo(pfa: PFA, word: str, n_trial: int = 1000, seed: int = N
         "acceptance_prob": acceptance_prob,
         "avg_path_prob": avg_path_prob,
         "std_path_prob": std_path_prob,
-        "time_taken": end_time - start_time,
-        "seed": seed
+        "time_taken": end_time - start_time 
     }
     

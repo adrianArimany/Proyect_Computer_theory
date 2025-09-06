@@ -24,7 +24,7 @@ def benchmark_pfa(pfa, words, n_trial=1000):
     "Probability": mc_result["acceptance_probability"],
     "Average Path Prob": mc_result["average_path_probability"],
     "Stddev Path Prob": mc_result["stddev_path_probability"],
-    "Elapsed Time (s)": mc_result["elapsed_time"],
+    "Elapsed Time (s)": mc_result["time_taken"],
     "Trials": mc_result["n_trial"]
     },
     {
@@ -32,7 +32,7 @@ def benchmark_pfa(pfa, words, n_trial=1000):
     "Probability": mm_result.exact_result.get("exact_probability", 0.0),
     "Average Path Prob": None,
     "Stddev Path Prob": None,
-    "Elapsed Time (s)": mm_result.exact_result["elapsed_time"],
+    "Elapsed Time (s)": mm_result.exact_result["time_taken"],
     "Trials": None
     }
     ])
