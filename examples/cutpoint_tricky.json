@@ -1,0 +1,10 @@
+{
+  "states": ["s0", "s1"],
+  "alphabet": ["a"],
+  "transitions": {
+    "s0,a": { "s0": 0.5001, "s1": 0.4999 },
+    "s1,a": { "s1": 1.0 }
+  },
+  "start_state": "s0",
+  "accept_states": ["s1"]
+}

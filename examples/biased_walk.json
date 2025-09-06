@@ -1,0 +1,11 @@
+{
+  "states": ["start", "mid", "end"],
+  "alphabet": ["x"],
+  "transitions": {
+    "start,x": { "mid": 1.0 },
+    "mid,x": { "mid": 0.6, "end": 0.4 },
+    "end,x": { "end": 1.0 }
+  },
+  "start_state": "start",
+  "accept_states": ["end"]
+}
