@@ -33,9 +33,10 @@ def simulate_monte_carlo(pfa: PFA, word: str, n_trial: int = 1000, seed: int = N
     return {
         "word": word,
         "n_trial": n_trial,
-        "acceptance_prob": acceptance_prob,
-        "avg_path_prob": avg_path_prob,
-        "std_path_prob": std_path_prob,
-        "time_taken": end_time - start_time 
+        "acceptance_probability": acceptance_prob,
+        "average_path_probability": avg_path_prob,
+        "stddev_path_probability": std_path_prob,
+        "time_taken": end_time - start_time
     }
+
     
