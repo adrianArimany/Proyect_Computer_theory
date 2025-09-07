@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from utils.io import load_pfa_from_json
 from simulation.monte_carlo import simulate_monte_carlo
 from simulation.matrix_method import simulate_matrix_method
@@ -6,22 +7,20 @@ from utils.benchmark import benchmark_pfa
 from analysis.cutpoint import estimate_cut_point
 from analysis.loop_analysis import loop_retun_probability
 from utils.visual import draw_pfa_diagram
-import pandas as pd
 
 st.set_page_config(layout="wide")
 
-# -- side bar --
-st.sidebar.title("load PFA")
+# -- sidebar --
+st.sidebar.title("Load PFA")
 json_file = st.sidebar.file_uploader("Upload PFA JSON", type="json")
 
-
-# -- main panel --
 st.title("Probabilistic Finite Automata Simulator")
 
 if json_file:
     pfa = load_pfa_from_json(json_file)
     st.success("PFA successfully loaded.")
 
+    # diagram + details
     col1, col2 = st.columns([2, 1])
     with col1:
         st.subheader("PFA diagram")
@@ -42,52 +41,63 @@ if json_file:
                 if sym == symbol:
                     for dest, prob in targets.items():
                         matrix.at[state, dest] = prob
-            st.markdown(f"**Symbol: `{symbol}`**")
-            st.dataframe(matrix)
+            with st.expander(f"Symbol: `{symbol}`"):
+                st.dataframe(matrix)
 
-    # Show simulation controls after PFA is loaded
-    with st.sidebar:
-        st.markdown("---")
-        method = st.selectbox("Simulation Method", ["monte_carlo", "matrix"])
-        word = st.text_input("Input Word from alphabet")
-        n_trial = st.number_input("Number of Trials for Monte Carlo", value=100000, step=1000)
+    # Main functional sections
+    tabs = st.tabs(["Evaluate Word", "Cut-point Analysis", "Loop Return Probability"])
 
-        st.markdown("---")
-        show_cutpoint = st.checkbox("Check cut point")
-        cut_threshold = st.slider("Cut point threshold", 0.0, 1.0, 0.5)
+    # ---- TAB 1: Evaluate Word ----
+    with tabs[0]:
+        st.header("Evaluate a Specific Word")
+        method = st.radio("Simulation Method", ["Monte Carlo", "Matrix"], horizontal=True)
+        word = st.text_input("Input Word")
+        n_trial = st.number_input("Monte Carlo Trials", value=100000, step=1000)
 
-        st.markdown("---")
-        show_loop = st.checkbox("Loop Return Probability")
-        loop_symbol = st.text_input("Symbol for Loop", value="")
-        loop_state = st.text_input("State for Loop", value="")
-        loop_k = st.number_input("Steps (k)", min_value=1, value=5)
+        if st.button("Run Evaluation"):
+            if word:
+                if method == "Monte Carlo":
+                    result = simulate_monte_carlo(pfa, word, n_trial)
+                else:
+                    result = simulate_matrix_method(pfa, word)
+                st.json(result)
 
+                # Benchmark both methods
+                st.subheader("Benchmark")
+                df = benchmark_pfa(pfa, word, n_trial=n_trial)
+                st.dataframe(df)
+            else:
+                st.warning("Enter a valid word.")
 
-    if word:
-        st.subheader("Method Result")
-        if method == "monte_carlo":
-            st.info("Monte Carlo Result")
-            result = simulate_monte_carlo(pfa, word, n_trial)
-        else:
-            st.info("Matrix Result")
-            result = simulate_matrix_method(pfa, word)
-        st.json(result)
+    # ---- TAB 2: Cut-point ----
+    with tabs[1]:
+        st.header("Cut-point Analysis")
+        word_cut = st.text_input("Word for cut-point test")
+        threshold = st.slider("Cut-point threshold", 0.0, 1.0, 0.5)
+        method_cut = st.radio("Method", ["Monte Carlo", "Matrix"], horizontal=True)
 
+        if st.button("Run Cut-point Test"):
+            if word_cut:
+                cut = estimate_cut_point(
+                    pfa, word=word_cut, method=method_cut.lower(), threshold=threshold, n_trial=n_trial
+                )
+                st.json(cut)
+            else:
+                st.warning("Enter a word for cut-point test.")
 
-        st.subheader("Benchmark Monte Carlo vs Matrix")
-        df = benchmark_pfa(pfa, word, n_trial=n_trial)
-        st.dataframe(df)
+    # ---- TAB 3: Loop Return ----
+    with tabs[2]:
+        st.header("Loop Return Probability")
+        symbol = st.text_input("Loop symbol")
+        state = st.text_input("Loop state")
+        k = st.number_input("Steps (k)", min_value=1, value=5)
 
+        if st.button("Run Loop Analysis"):
+            if symbol and state:
+                prob = loop_retun_probability(pfa, symbol, state, k)
+                st.write(f"Return probability to '{state}' after {k} steps on '{symbol}': {prob:.5f}")
+            else:
+                st.warning("Specify both a symbol and a state.")
 
-        if show_cutpoint:
-            st.subheader("Cut-point Analysis")
-            cut = estimate_cut_point(pfa, word, method=method, threshold=cut_threshold, n_trial=n_trial)
-            st.json(cut)
-
-
-        if show_loop:
-            st.subheader("Loop Return Probability")
-            prob = loop_retun_probability(pfa, loop_symbol, loop_state, loop_k)
-            st.write(f"Return probability to '{loop_state}' after {loop_k} steps on '{loop_symbol}': {prob:.5f}")
-    else:
-        st.warning("Please upload a valid PFA JSON file to begin.")
+else:
+    st.warning("Please upload a valid PFA JSON file to begin.")
