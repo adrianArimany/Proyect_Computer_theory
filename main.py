@@ -5,7 +5,7 @@ from utils.io import load_pfa_from_json
 from simulation.monte_carlo import simulate_monte_carlo
 from simulation.matrix_method import simulate_matrix_method
 from utils.benchmark import benchmark_pfa
-from analysis.cutpoint import estimate_cut_point
+from utils.benchmark_cutpoint import benchmark_cutpoint
 from analysis.loop_analysis import loop_retun_probability
 from utils.visual import draw_pfa_diagram
 
@@ -115,22 +115,39 @@ if json_file:
     # ---- TAB 2: Cut-point ----
     with tabs[1]:
         st.header("Cut-point Analysis")
-        method_cut = st.radio("Method", ["Monte Carlo", "Matrix"], horizontal=True)
+        #method_cut = st.radio("Method", ["Monte Carlo", "Matrix"], horizontal=True)
         word_cut = st.text_input("Word for cut-point test")
         threshold = st.slider("Cut-point threshold", 0.0, 1.0, 0.5)
         n_trial_cut = st.number_input("Monte Carlo Trials", value=100000, step=1000, key="n_trial_cut")
 
         
-        
         if st.button("Run Cut-point Test"):
             if word_cut:
-                cut = estimate_cut_point(
-                    pfa, word=word_cut, method=method_cut.lower(), threshold=threshold, n_trial=n_trial_cut
+                df = benchmark_cutpoint(pfa, word_cut, threshold=threshold, n_trial=n_trial_cut)
+                st.session_state["benchmark_history"] = pd.concat(
+                    [st.session_state["benchmark_history"], df], ignore_index=True
                 )
-                st.json(cut)
-            else:
-                st.warning("Enter a word for cut-point test.")
-
+                               
+        if not st.session_state["benchmark_history"].empty and 'df' in locals():
+            st.subheader("Benchmark Results")
+            
+            def highlight_methods(row):
+                if row["Method"] == "Monte Carlo":
+                    return ['background-color: #ffcccc'] * len(row)
+                elif row["Method"] == "Matrix Product":
+                    return ['background-color: #cce5ff'] * len(row)
+                else:
+                    return [''] * len(row)
+            
+            styled_df = st.session_state["benchmark_history"].style.apply(highlight_methods, axis=1)
+            
+            st.dataframe(styled_df, use_container_width=True)
+            
+            st.subheader("Monte Carlo vs Matrix Method Comparison")
+            df_pivot = st.session_state["benchmark_history"].pivot_table(
+                index="Word", columns="Method", values="Probability"
+            ).dropna()
+            
     # ---- TAB 3: Loop Return ----
     with tabs[2]:
         st.header("Loop Return Probability")
