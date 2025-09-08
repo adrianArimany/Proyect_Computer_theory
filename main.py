@@ -6,7 +6,8 @@ from simulation.monte_carlo import simulate_monte_carlo
 from simulation.matrix_method import simulate_matrix_method
 from utils.benchmark import benchmark_pfa
 from utils.benchmark_cutpoint import benchmark_cutpoint
-from analysis.loop_analysis import loop_retun_probability
+from utils.benchmark_cutpoint import search_cut_point_words
+from utils.benchmark_loop import benchmark_loop
 from utils.visual import draw_pfa_diagram
 
 st.set_page_config(layout="wide")
@@ -148,19 +149,83 @@ if json_file:
                 index="Word", columns="Method", values="Probability"
             ).dropna()
             
+        #This is if the user wants to search for words within a cutpoint or interval without specifying a word.    
+        st.subheader("Search Words by Cut-point or Interval")
+        
+        colA, colB = st.columns(2)
+        with colA:
+            threshold_search = st.number_input("Cut-point threshold", 0.0, 1.0, 0.5, key="cp_threshold")
+        with colB:
+            interval_low = st.number_input("Interval low", 0.0, 1.0, 0.0, key="cp_low")
+            interval_high = st.number_input("Interval high", 0.0, 1.0, 1.0, key="cp_high")
+        
+        max_length = st.number_input("Max word length", min_value=1, max_value=10, value=3, step=1, key="cp_maxlen")
+        time_limit = st.number_input("Time limit (seconds)", 1, 60, 10, key="cp_timelimit")
+    
+        df_results, timing = pd.DataFrame(), {}
+        
+        if st.button("Search all Cut-points"):
+            df_results, timing = search_cut_point_words(
+            pfa,
+            max_length=max_length,
+            threshold=threshold_search if interval_low == interval_high else None,
+            interval=(interval_low, interval_high) if interval_low < interval_high else None,
+            n_trial=n_trial_cut,
+            time_limit=time_limit
+        )
+
+    if not df_results.empty:
+        st.success(f"Found {len(df_results)} words within criteria")
+        st.dataframe(df_results, use_container_width=True)
+
+        # runtime comparison plot
+        fig, ax = plt.subplots()
+        ax.bar(["Monte Carlo", "Matrix"], [timing["Monte Carlo"], timing["Matrix Product"]],
+               color=["red", "blue"])
+        ax.set_ylabel("Total Time (s)")
+        ax.set_title("Runtime to find matching words")
+        st.pyplot(fig)
+    else:
+        st.warning("No words found within the given cut-point/interval and time limit.")
+        
     # ---- TAB 3: Loop Return ----
     with tabs[2]:
         st.header("Loop Return Probability")
-        symbol = st.text_input("Loop symbol")
-        state = st.text_input("Loop state")
-        k = st.number_input("Steps (k)", min_value=1, value=5, key="k_steps")
-
+        loop_symbol = st.text_input("Loop symbol", key="loop_symbol")
+        loop_state = st.text_input("Loop state", key="loop_state")
+        loop_k = st.number_input("Steps (k)", min_value=1, value=5, key="loop_k")
+        
         if st.button("Run Loop Analysis"):
-            if symbol and state:
-                prob = loop_retun_probability(pfa, symbol, state, k)
-                st.write(f"Return probability to '{state}' after {k} steps on '{symbol}': {prob:.5f}")
+            if loop_symbol and loop_state:
+                df = benchmark_loop(pfa, loop_symbol, loop_state, loop_k)
+                if "loop_history" not in st.session_state:
+                    st.session_state["loop_history"] = pd.DataFrame()
+                st.session_state["loop_history"] = pd.concat(
+                    [st.session_state["loop_history"], df], ignore_index=True
+                )
             else:
-                st.warning("Specify both a symbol and a state.")
+                st.warning("Please provide both loop symbol and state.")
+        
+        if "loop_history" in st.session_state and not st.session_state["loop_history"].empty:
+            st.subheader("Loop Return Results")
+            st.dataframe(st.session_state["loop_history"], use_container_width=True)
 
+            # Plot: probability vs steps
+            fig, ax = plt.subplots()
+            for state in st.session_state["loop_history"]["State"].unique():
+                state_df = st.session_state["loop_history"][
+                    st.session_state["loop_history"]["State"] == state
+                ]
+                ax.plot(state_df["Steps (k)"], state_df["Return Probability"],
+                    marker="o", label=f"State {state}")
+            ax.set_xlabel("Steps (k)")
+            ax.set_ylabel("Return Probability")
+            ax.set_title("Loop Return Probability over Steps")
+            ax.legend()
+            st.pyplot(fig)
+        else:
+            st.info("No loop within this transitions")
+        
+        
 else:
     st.warning("Please upload a valid PFA JSON file to begin.")

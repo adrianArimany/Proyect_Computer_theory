@@ -49,3 +49,4 @@ def benchmark_pfa(pfa, words, n_trial=1000):
     
     return pd.DataFrame([mc_row, mm_row])
 
+
