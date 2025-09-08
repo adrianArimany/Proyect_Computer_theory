@@ -7,7 +7,7 @@ from simulation.matrix_method import simulate_matrix_method
 from utils.benchmark import benchmark_pfa
 from utils.benchmark_cutpoint import benchmark_cutpoint
 from utils.benchmark_cutpoint import search_cut_point_words
-from utils.benchmark_loop import benchmark_loop
+from analysis.loop_analysis import loop_acceptance_probability_matrix, loop_acceptance_probability_montecarlo   
 from utils.visual import draw_pfa_diagram
 
 st.set_page_config(layout="wide")
@@ -188,44 +188,38 @@ if json_file:
     else:
         st.warning("No words found within the given cut-point/interval and time limit.")
         
-    # ---- TAB 3: Loop Return ----
+    # ---- TAB 3: Loop  ----
     with tabs[2]:
-        st.header("Loop Return Probability")
+        st.header("Loop Acceptance Probability")
         st.info("Currently only supports single-symbol loops, and ")
         loop_symbol = st.text_input("Loop symbol", key="loop_symbol")
-        loop_state = st.text_input("Loop state", key="loop_state")
-        loop_k = st.number_input("Steps (k)", min_value=1, value=5, key="loop_k")
+        loop_k = st.slider("Number of repetitions (k)", min_value=1, max_value=10000, value=100, step=10, key="loop_k")
+        n_trial_loop = st.number_input("Monte Carlo Trials", min_value=1000, value=10000, step=1000, key="n_trial_loop")
+
+        
+        method = st.radio("Method", ["Matrix (Exact)", "Monte Carlo (Approximate)"], horizontal=True, key="loop_method")
+
         
         if st.button("Run Loop Analysis"):
-            if loop_symbol and loop_state:
-                df = benchmark_loop(pfa, loop_symbol, loop_state, loop_k)
-                if "loop_history" not in st.session_state:
-                    st.session_state["loop_history"] = pd.DataFrame()
-                st.session_state["loop_history"] = pd.concat(
-                    [st.session_state["loop_history"], df], ignore_index=True
-                )
+            if method == "Matrix (Exact)":
+                result = loop_acceptance_probability_matrix(pfa, loop_symbol, loop_k)
             else:
-                st.warning("Please provide both loop symbol and state.")
-        
-        if "loop_history" in st.session_state and not st.session_state["loop_history"].empty:
-            st.subheader("Loop Return Results")
-            st.dataframe(st.session_state["loop_history"], use_container_width=True)
+                result = loop_acceptance_probability_montecarlo(pfa, loop_symbol, loop_k, n_trial=n_trial_loop)
 
-            # Plot: probability vs steps
+            st.json(result)
+
+        if "loop_history" in st.session_state and st.session_state["loop_history"]:
+            st.subheader("Loop Acceptance Results")
+            st.dataframe(pd.DataFrame(st.session_state["loop_history"]), use_container_width=True)
+
+            # Plot k vs probability
+            df = pd.DataFrame(st.session_state["loop_history"])
             fig, ax = plt.subplots()
-            for state in st.session_state["loop_history"]["State"].unique():
-                state_df = st.session_state["loop_history"][
-                    st.session_state["loop_history"]["State"] == state
-                ]
-                ax.plot(state_df["Steps (k)"], state_df["Return Probability"],
-                    marker="o", label=f"State {state}")
-            ax.set_xlabel("Steps (k)")
-            ax.set_ylabel("Return Probability")
-            ax.set_title("Loop Return Probability over Steps")
-            ax.legend()
+            ax.plot(df["k"], df["probability"], marker="o")
+            ax.set_xlabel("Repetitions (k)")
+            ax.set_ylabel("Acceptance Probability")
+            ax.set_title("Loop Acceptance Probability over k")
             st.pyplot(fig)
-        else:
-            st.info("No loop within this transitions")
         
         
 else:

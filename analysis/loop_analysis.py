@@ -1,32 +1,43 @@
 import numpy as np
-from core.pfa import PFA
+import time
 
-def loop_retun_probability(pfa: PFA, symbol: str, state: str, k: int) -> float:
+def loop_acceptance_probability_matrix(pfa, symbol, k):
     """
-    Computes the probability of returning to a given state after k steps
-    using only the specified symbol.
-    
-    Args:
-        pfa (PFA): instance of PFA class.
-        symbol (str): the symbol to be used for transitions.
-        state (str): the state to return to.
-        k (int): number of steps.
+    Exact acceptance probability of repeating `symbol` k times.
+    Uses matrix multiplication.
+    """
+    v0 = pfa.get_intial_vector()
+    f = pfa.get_final_vector()
+    mu = pfa.get_transition_matrices()[symbol]
 
-    Returns:
-        float: Probability of returning to the state after k steps.
+    start = time.time()
+    prob = float(v0 @ np.linalg.matrix_power(mu, k) @ f)
+    return {
+        "method": "matrix",
+        "symbol": symbol,
+        "k": k,
+        "probability": prob,
+        "time_taken": time.time() - start
+    }
+
+
+def loop_acceptance_probability_montecarlo(pfa, symbol, k, n_trial=10000):
     """
-    assert symbol in pfa.alphabet, f"Symbol {symbol} not in alphabet"
-    assert state in pfa.states, f"State {state} not in states"
-    assert k >= 1, "k must be at least 1"
-    
-    mu = pfa.get_transition_matrices()
-    T = mu[symbol] # Transition matrix for this symbol only
-    
-    index = list(pfa.states).index(state)
-    v = np.zeros((1,len(pfa.states)))
-    v[0,index] = 1.0 # Initial vector at the given state
-    
-    #Evolve k times
-    T_k = np.linalg.matrix_power(T, k)
-    result = float(np.dot(v, T_k)[0][index])
-    return result
+    Monte Carlo estimate of acceptance probability of symbol^k.
+    """
+    start = time.time()
+    accept_count = 0
+    for _ in range(n_trial):
+        word = symbol * k
+        is_accepted, _ = pfa.run_once(word)
+        if is_accepted:
+            accept_count += 1
+
+    return {
+        "method": "monte_carlo",
+        "symbol": symbol,
+        "k": k,
+        "n_trial": n_trial,
+        "probability": accept_count / n_trial,
+        "time_taken": time.time() - start
+    }
