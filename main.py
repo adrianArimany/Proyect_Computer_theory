@@ -185,13 +185,11 @@ if json_file:
         ax.set_ylabel("Total Time (s)")
         ax.set_title("Runtime to find matching words")
         st.pyplot(fig)
-    else:
-        st.warning("No words found within the given cut-point/interval and time limit.")
         
     # ---- TAB 3: Loop  ----
     with tabs[2]:
         st.header("Loop Acceptance Probability")
-        st.info("Currently only supports single-symbol loops, and ")
+        st.info("Currently only supports single-symbol loops")
         loop_symbol = st.text_input("Loop symbol", key="loop_symbol")
         loop_k = st.slider("Number of repetitions (k)", min_value=1, max_value=10000, value=100, step=10, key="loop_k")
         n_trial_loop = st.number_input("Monte Carlo Trials", min_value=1000, value=10000, step=1000, key="n_trial_loop")
