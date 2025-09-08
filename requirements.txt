@@ -2,13 +2,7 @@
 streamlit>=1.27
 numpy>=1.24
 pandas>=1.5
-
-# Optional: for type hints, dev tooling
-typing-extensions>=4.5
-
-# If you plan to expand with visualizations
 networkx>=3.1
 matplotlib>=3.7
 
-# Optional: fast JSON validation (if added)
-# pydantic>=2.0
+
