@@ -191,6 +191,7 @@ if json_file:
     # ---- TAB 3: Loop Return ----
     with tabs[2]:
         st.header("Loop Return Probability")
+        st.info("Currently only supports single-symbol loops, and ")
         loop_symbol = st.text_input("Loop symbol", key="loop_symbol")
         loop_state = st.text_input("Loop state", key="loop_state")
         loop_k = st.number_input("Steps (k)", min_value=1, value=5, key="loop_k")
