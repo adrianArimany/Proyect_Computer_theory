@@ -1,16 +1,14 @@
 import streamlit as st # type: ignore
 import pandas as pd
 import matplotlib.pyplot as plt
-import time
 from utils.io import load_pfa_from_json
 from simulation.monte_carlo import simulate_monte_carlo
 from simulation.matrix_method import simulate_matrix_method
 from utils.benchmark import benchmark_pfa
 from utils.benchmark_cutpoint import benchmark_cutpoint
 from utils.benchmark_cutpoint import search_cut_point_words
-from analysis.loop_analysis import loop_acceptance_probability_matrix, loop_acceptance_probability_montecarlo   
-from utils.monte_trace import get_mc_result_with_trace
 from utils.visual import draw_pfa_diagram
+from utils.benchmark_loop import benchmark_loop
 
 
 st.set_page_config(layout="wide")
@@ -192,72 +190,40 @@ if json_file:
     # ---- TAB 3: Loop  ----
     with tabs[2]:
         st.header("Loop Acceptance Probability")
-        st.info("Runs Matrix (exact) and Monte Carlo (approx) together. Shows a joint table and a time-complexity plot.")   
+        st.info("Runs Matrix and Monte Carlo methods.")   
 
-        loop_symbol = st.text_input("Loop symbol", key="loop_symbol")
-        loop_k = st.slider("Number of repetitions (k)", min_value=1, max_value=100_000, value=100, step=10, key="loop_k")
-        n_trial_loop = st.number_input("Monte Carlo Trials", min_value=1_000, value=10_000, step=1_000, key="n_trial_loop")
+        loop_symbol = st.selectbox("Loop symbol", options=pfa.alphabet, key="loop_symbol")
+        loop_k = st.slider("Number of repetitions (k)", min_value=1, max_value=100_000,
+                       value=100, step=10, key="loop_k")
+        n_trial_loop = st.number_input("Monte Carlo Trials", min_value=1_000, value=10_000,
+                                   step=1_000, key="n_trial_loop")
 
-        # Prepare session state
         if "loop_history" not in st.session_state:
-            st.session_state["loop_history"] = []  # list of dict rows
+            st.session_state["loop_history"] = pd.DataFrame()
 
         if st.button("Run Loop Analysis (Matrix + Monte Carlo)", key="run_loop_both"):
-        
-            if not loop_symbol:
-                st.warning("Please enter a loop symbol first.")
-            else:
-                # Matrix (Exact)
-                t0 = time.perf_counter()
-                mat_res = loop_acceptance_probability_matrix(pfa, loop_symbol, loop_k)
-                t1 = time.perf_counter()
-                if isinstance(mat_res, dict):
-                    mat_prob = mat_res.get("probability", mat_res.get("p", None))
-                else:
-                    mat_prob = float(mat_res)
-                    mat_runtime_ms = (t1 - t0) * 1000.0
+            df_new = benchmark_loop(pfa, loop_symbol, loop_k, n_trial=int(n_trial_loop))
+            st.session_state["loop_history"] = pd.concat(
+                [st.session_state["loop_history"], df_new], ignore_index=True
+            )
 
-                # Monte Carlo (Approx)
-                t0 = time.perf_counter()
-                mc_res = loop_acceptance_probability_montecarlo(pfa, loop_symbol, loop_k, n_trial=int(n_trial_loop))
-                t1 = time.perf_counter()
-                if isinstance(mc_res, dict):
-                    mc_prob = mc_res.get("probability", mc_res.get("p", None))
-                    mc_stderr = mc_res.get("stderr", None)
-                else:
-                    mc_prob = float(mc_res)
-                    mc_stderr = None
-                    mc_runtime_ms = (t1 - t0) * 1000.0
-
-                # One-row combined result
-                row = {
-                    "symbol": loop_symbol,
-                    "k": int(loop_k),
-                    "trials": int(n_trial_loop),
-                    "matrix_prob": mat_prob,
-                    "mc_prob": mc_prob,
-                    "mc_stderr": mc_stderr,
-                    "runtime_matrix_ms": mat_runtime_ms,
-                    "runtime_mc_ms": mc_runtime_ms,
-                }
-                st.session_state["loop_history"].append(row)
-
-            # === Results table ===
-        if st.session_state["loop_history"]:
-        
-            df = pd.DataFrame(st.session_state["loop_history"])
+        if not st.session_state["loop_history"].empty:
             st.subheader("Loop Acceptance Results (Matrix vs Monte Carlo)")
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(st.session_state["loop_history"], use_container_width=True)
 
-        # === Plot: Time complexity vs k (both methods) ===
+            # Plot: Time complexity vs k (both methods)
             fig, ax = plt.subplots()
-            ax.plot(df["k"], df["runtime_matrix_ms"], marker="o", label="Matrix runtime (ms)")
-            ax.plot(df["k"], df["runtime_mc_ms"], marker="o", label="Monte Carlo runtime (ms)")
+            ax.plot(st.session_state["loop_history"]["k"],
+                st.session_state["loop_history"]["Runtime Matrix (ms)"],
+                marker="o", label="Matrix runtime (ms)")
+            ax.plot(st.session_state["loop_history"]["k"],
+                st.session_state["loop_history"]["Runtime Monte Carlo (ms)"],
+                marker="o", label="Monte Carlo runtime (ms)")
             ax.set_xlabel("Repetitions (k)")
             ax.set_ylabel("Runtime (ms)")
             ax.set_title("Time Complexity over k")
             ax.legend()
             st.pyplot(fig)
-        
+    
 else:
     st.warning("Please upload a valid PFA JSON file to begin.")
