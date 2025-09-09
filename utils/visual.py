@@ -1,4 +1,4 @@
-import networkx as nx
+import networkx as nx # type: ignore
 import matplotlib.pyplot as plt
 
 def draw_pfa_diagram(pfa):
