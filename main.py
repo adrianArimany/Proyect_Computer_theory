@@ -120,7 +120,7 @@ if json_file:
         #method_cut = st.radio("Method", ["Monte Carlo", "Matrix"], horizontal=True)
         word_cut = st.text_input("Word for cut-point test")
         threshold = st.slider("Cut-point threshold", 0.0, 1.0, 0.5)
-        n_trial_cut = st.number_input("Monte Carlo Trials", value=100000, step=1000, key="n_trial_cut")
+        n_trial_cut = st.number_input("Monte Carlo Trials", value=5000, step=1000, key="n_trial_cut")
 
         
         if st.button("Run Cut-point Test"):
